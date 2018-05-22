@@ -100,7 +100,7 @@ int main() {
           */
 		  Eigen::VectorXd x_pts = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
 		  Eigen::VectorXd y_pts = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());;
-		  size_t iter = 10;
+		  //size_t iter = 10;
 		  // Fitting a polynomial 
 		  auto coeffs = polyfit( x_pts, y_pts,1);
 		  // Calculating CTE by evaluating polynomial at point px
@@ -120,26 +120,31 @@ int main() {
 		  std::vector<double> delta_vals = {};
 		  std::vector<double> a_vals = {};
 		  
-		  for(int i = 0; i < iter;i++){
-			  std::cout << "Iteration " <<i<<std::endl;
+		  //for(int i = 0; i < iter;i++){
+			  //std::cout << "Iteration " <<i<<std::endl;
 			  
-			  auto vars = mpc.Solve(state,coeffs);
-			  std::cout << "Here" <<std::endl;
-			  x_vals.push_back(vars[0]);
-			  y_vals.push_back(vars[1]);
-			  psi_vals.push_back(vars[2]);
-			  v_vals.push_back(vars[3]);
-			  cte_vals.push_back(vars[4]);
-			  epsi_vals.push_back(vars[5]);
-			  
-			  delta_vals.push_back(vars[6]);
-			  a_vals.push_back(vars[7]);
-			  
-			  state << vars[0],vars[1],vars[2],vars[3],vars[4],vars[5];
-			  std::cout <<"State : "<<state<<std::endl;
+		  auto vars = mpc.Solve(state,coeffs);
+		
+		  x_vals.push_back(vars[0]);
+		  y_vals.push_back(vars[1]);
+		  psi_vals.push_back(vars[2]);
+		  v_vals.push_back(vars[3]);
+		  cte_vals.push_back(vars[4]);
+		  epsi_vals.push_back(vars[5]);
+		  
+		  delta_vals.push_back(vars[6]);
+		  a_vals.push_back(vars[7]);
+		  
+		  // additional predicted x-val and y-vals
+		  for(int p = 8;p<18;p++){
+			  x_vals.push_back(vars[p]);
+			  y_vals.push_back(vars[p]);
 		  }
+		  state << vars[0],vars[1],vars[2],vars[3],vars[4],vars[5];
+		  std::cout <<"State : "<<state<<std::endl;
+		  //}
 		  
-		  
+		  // reverse the sign of steering angle to accomodate simulator behaviour
           double steer_value = -1 * delta_vals[0];//std::accumulate(delta_vals.begin(), delta_vals.end(), 0) / delta_vals.size();
           double throttle_value = a_vals[0];//std::accumulate(a_vals.begin(), a_vals.end(), 0) / a_vals.size();
 
