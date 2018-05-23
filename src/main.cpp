@@ -77,6 +77,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
+	std::cout<<"Input Message"<<std::endl;
     cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
@@ -98,25 +99,38 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
+		  // Changing waypoints to car coords so that change x >> change y
+		  for(int i = 0;i<ptsx.size();i++){
+			  // shifting the points to cars coords with same axes as global coords axes
+			  double del_x = ptsx[i] - px;
+			  double del_y = ptsy[i] - py;
+			  // adjusting waypoints as per car's driving orientation(psi)
+			  ptsx[i] = del_x * cos(0-psi) - del_y * sin(0-psi);
+			  ptsy[i] = del_x * sin(0-psi) + del_y * cos(0-psi);
+		  }
+		  
 		  Eigen::VectorXd x_pts = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
 		  Eigen::VectorXd y_pts = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());;
 		  //size_t iter = 10;
 		  // Fitting a polynomial 
-		  auto coeffs = polyfit( x_pts, y_pts,1);
-		  // Calculating CTE by evaluating polynomial at point px
-		  double cte = polyeval(coeffs,px) - py;
+		  auto coeffs = polyfit( x_pts, y_pts,3);
+		  // y = coeffs[0] + coeffs[1]*x + coeffs[2]*x*x + coeffs[3]*x*x*x
+		  // Calculating CTE by evaluating polynomial at 0 as waypoints starts from by cosidering car at origin
+		  double cte = polyeval(coeffs,0);
 		  // diffrence in heading of vehicle
-		  double epsi = psi - atan(coeffs[1]);
+		  // epsi = psi - atan(coeffs[1] + 2*coeffs[2]*x + 3*coeffs[3]*x*x)
+		  // as psi = 0 and x = 0
+		  double epsi = - atan(coeffs[1]);
 		  
 		  Eigen::VectorXd state(6);
-		  state << px,py,psi,v,cte,epsi;
+		  state << 0,0,0,v,cte,epsi;
 		  // Vectors to store predicted values of parameter during each iteration
 		  std::vector<double> x_vals = {state[0]};
 		  std::vector<double> y_vals = {state[1]};
-		  std::vector<double> psi_vals = {state[2]};
-		  std::vector<double> v_vals = {state[3]};
-		  std::vector<double> cte_vals = {state[4]};
-		  std::vector<double> epsi_vals = {state[5]};
+		  //std::vector<double> psi_vals = {state[2]};
+		  //std::vector<double> v_vals = {state[3]};
+		  //std::vector<double> cte_vals = {state[4]};
+		  //std::vector<double> epsi_vals = {state[5]};
 		  std::vector<double> delta_vals = {};
 		  std::vector<double> a_vals = {};
 		  
@@ -127,31 +141,32 @@ int main() {
 		
 		  x_vals.push_back(vars[0]);
 		  y_vals.push_back(vars[1]);
-		  psi_vals.push_back(vars[2]);
-		  v_vals.push_back(vars[3]);
-		  cte_vals.push_back(vars[4]);
-		  epsi_vals.push_back(vars[5]);
+		  //psi_vals.push_back(vars[2]);
+		  //v_vals.push_back(vars[3]);
+		  //cte_vals.push_back(vars[4]);
+		  //epsi_vals.push_back(vars[5]);
 		  
 		  delta_vals.push_back(vars[6]);
 		  a_vals.push_back(vars[7]);
 		  
 		  // additional predicted x-val and y-vals
-		  for(int p = 8;p<18;p++){
+		  for(int p = 8;p<18;p+=2){
 			  x_vals.push_back(vars[p]);
-			  y_vals.push_back(vars[p]);
+			  y_vals.push_back(vars[p+1]);
 		  }
 		  state << vars[0],vars[1],vars[2],vars[3],vars[4],vars[5];
 		  std::cout <<"State : "<<state<<std::endl;
 		  //}
 		  
 		  // reverse the sign of steering angle to accomodate simulator behaviour
-          double steer_value = -1 * delta_vals[0];//std::accumulate(delta_vals.begin(), delta_vals.end(), 0) / delta_vals.size();
+          double steer_value = delta_vals[0];//std::accumulate(delta_vals.begin(), delta_vals.end(), 0) / delta_vals.size();
           double throttle_value = a_vals[0];//std::accumulate(a_vals.begin(), a_vals.end(), 0) / a_vals.size();
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value / deg2rad(25);
+		  double Lf = 2.67;
+          msgJson["steering_angle"] = -1 * steer_value / (deg2rad(25) * Lf);
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
@@ -161,31 +176,38 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 		  
-		  // TODO : Converting map co-ordinates list(x_vals,y_vals) to vehicle's coordinate system
-		  for(int t=0 ; t< size(x_vals);t++){
-			  // Calculation goes here 
-			  mpc_x_vals.push_back();
-			  mpc_y_vals.push_back();
-		  }
+		  // TODO : Vector(x_vals,y_vals) already in vehicle's coordinate system
+		   
+		  mpc_x_vals = x_vals;
+		  mpc_y_vals = y_vals;
+		  
+		  
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
-
+		  
+		  // Printing MPC points
+		  std::cout <<"MPC points";
+		  for(int i = 0;i<mpc_x_vals.size();i++){
+			std::cout <<"("<<  mpc_x_vals[i] <<","<< mpc_y_vals[i] <<"), ";
+		  }
+		  std::cout <<std::endl;
+		  
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-		  // TODO : Converting map co-ordinates list(ptsx,ptsy) to vehicle's coordinate system
-		  for(int t=0 ; t< size(ptsx);t++){
-			  // Calculation goes here 
-			  next_x_vals.push_back();
-			  next_y_vals.push_back();
+		  // TODO : Vector(ptsx,ptsy) already in vehicle's coordinate system
+		  next_x_vals = ptsx;
+		  next_y_vals = ptsy;
+		  std::cout <<"Way points ";
+		  for(int i = 0;i<next_x_vals.size();i++){
+			std::cout <<"("<<  next_x_vals[i] <<","<< next_y_vals[i] <<"), ";
 		  }
-
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
+		  std::cout <<std::endl;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
