@@ -77,8 +77,8 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-	std::cout<<"Input Message"<<std::endl;
-    cout << sdata << endl;
+	// std::cout<<"Input Message"<<std::endl;
+    // cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -150,12 +150,12 @@ int main() {
 		  a_vals.push_back(vars[7]);
 		  
 		  // additional predicted x-val and y-vals
-		  for(int p = 8;p<18;p+=2){
+		  for(int p = 8;p<22;p+=2){
 			  x_vals.push_back(vars[p]);
 			  y_vals.push_back(vars[p+1]);
 		  }
 		  state << vars[0],vars[1],vars[2],vars[3],vars[4],vars[5];
-		  std::cout <<"State : "<<state<<std::endl;
+		  // std::cout <<"State after MPC : "<<state<<std::endl;
 		  //}
 		  
 		  // reverse the sign of steering angle to accomodate simulator behaviour
@@ -185,12 +185,12 @@ int main() {
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 		  
-		  // Printing MPC points
-		  std::cout <<"MPC points";
+		  /* Printing MPC points
+		   std::cout <<"MPC points";
 		  for(int i = 0;i<mpc_x_vals.size();i++){
 			std::cout <<"("<<  mpc_x_vals[i] <<","<< mpc_y_vals[i] <<"), ";
 		  }
-		  std::cout <<std::endl;
+		  std::cout <<std::endl;*/
 		  
           //Display the waypoints/reference line
           vector<double> next_x_vals;
@@ -201,16 +201,16 @@ int main() {
 		  // TODO : Vector(ptsx,ptsy) already in vehicle's coordinate system
 		  next_x_vals = ptsx;
 		  next_y_vals = ptsy;
-		  std::cout <<"Way points ";
+		  /*std::cout <<"Way points ";
 		  for(int i = 0;i<next_x_vals.size();i++){
 			std::cout <<"("<<  next_x_vals[i] <<","<< next_y_vals[i] <<"), ";
-		  }
+		  }*/
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-		  std::cout <<std::endl;
+		  // std::cout <<std::endl;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
