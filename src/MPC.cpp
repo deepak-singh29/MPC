@@ -20,7 +20,7 @@ double dt = 0.1;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
-double ref_v = 10;
+double ref_v = 30;
 // defining state parameters indexes
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -53,14 +53,14 @@ class FG_eval {
 	
 	// Cost based on reference state
 	for(int t=0;t<N;t++){
-		fg[0] += 2000 * CppAD::pow(vars[epsi_start + t],2);
-		fg[0] += 2000 * CppAD::pow(vars[cte_start + t],2);
+		fg[0] += 1000 * CppAD::pow(vars[epsi_start + t],2);
+		fg[0] += 5000 * CppAD::pow(vars[cte_start + t],2);
 		fg[0] += 10 * CppAD::pow((ref_v - vars[v_start + t]),2);
 	}
 	
 	// Adding actuator cost to fg[0]
 	for(int t=0;t<N-1;t++){
-		fg[0] += CppAD::pow(vars[delta_start + t] ,2);
+		fg[0] += 500 * CppAD::pow(vars[delta_start + t] ,2);
 		fg[0] += CppAD::pow(vars[a_start + t] ,2);
 	}
 	
@@ -250,7 +250,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   return {solution.x[x_start + 1],solution.x[y_start + 1],
           solution.x[psi_start + 1], solution.x[v_start + 1],
           solution.x[cte_start + 1], solution.x[epsi_start + 1],
-          solution.x[delta_start + 1],   solution.x[a_start + 1],
+          solution.x[delta_start],   solution.x[a_start],
 		  solution.x[x_start + 2],solution.x[y_start + 2],
 		  solution.x[x_start + 3],solution.x[y_start + 3],
 		  solution.x[x_start + 4],solution.x[y_start + 4],
