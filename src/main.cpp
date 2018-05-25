@@ -123,7 +123,8 @@ int main() {
 		  double epsi = - atan(coeffs[1]);
 		  
 		  Eigen::VectorXd state(6);
-		  state << 0,0,0,v,cte,epsi;
+
+      state << 0,0,0,v,cte,epsi;
 		  // Vectors to store predicted values of parameter during each iteration
 		  std::vector<double> x_vals = {state[0]};
 		  std::vector<double> y_vals = {state[1]};
@@ -133,9 +134,6 @@ int main() {
 		  //std::vector<double> epsi_vals = {state[5]};
 		  std::vector<double> delta_vals = {};
 		  std::vector<double> a_vals = {};
-		  
-		  //for(int i = 0; i < iter;i++){
-			  //std::cout << "Iteration " <<i<<std::endl;
 			  
 		  auto vars = mpc.Solve(state,coeffs);
 		
@@ -165,8 +163,8 @@ int main() {
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-		  double Lf = 2.67;
-          msgJson["steering_angle"] = -1 * steer_value / (deg2rad(25) * Lf);
+		  
+          msgJson["steering_angle"] = -1 * steer_value / (deg2rad(25));
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
@@ -199,8 +197,13 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 		  // TODO : Vector(ptsx,ptsy) already in vehicle's coordinate system
-		  next_x_vals = ptsx;
-		  next_y_vals = ptsy;
+      // polyeval(coeffs,x)
+      for(int x = 0;x<=50;x+=2){
+        next_x_vals.push_back(x);
+        next_y_vals.push_back(polyeval(coeffs,x));
+      }
+		  // next_x_vals = ptsx;
+		  // next_y_vals = ptsy;
 		  /*std::cout <<"Way points ";
 		  for(int i = 0;i<next_x_vals.size();i++){
 			std::cout <<"("<<  next_x_vals[i] <<","<< next_y_vals[i] <<"), ";
